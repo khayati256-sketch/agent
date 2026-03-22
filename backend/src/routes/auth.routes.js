@@ -8,6 +8,7 @@ import {
   verifySignupEmailOtp,
   verifySignupPhoneOtp,
 } from '../controllers/auth.controller.js';
+import { getSmtpDebugStatus, sendDebugOtpEmail } from '../controllers/debug.controller.js';
 import { login, logout, me, resendLoginOtp, verifyLoginOtp } from '../controllers/login.controller.js';
 import { requireAuth } from '../middleware/auth.js';
 import {
@@ -22,6 +23,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import {
   forgotPasswordSchema,
   googleAuthSchema,
+  debugEmailOtpSendSchema,
   loginSchema,
   loginOtpResendSchema,
   loginOtpVerifySchema,
@@ -33,6 +35,15 @@ import {
 } from '../utils/validators.js';
 
 const router = Router();
+
+router.get('/debug/smtp-status', asyncHandler(getSmtpDebugStatus));
+router.post(
+  '/debug/send-otp-email',
+  otpDispatchRateLimiter,
+  preventOtpSpam,
+  validateBody(debugEmailOtpSendSchema),
+  asyncHandler(sendDebugOtpEmail),
+);
 
 router.post('/signup', otpDispatchRateLimiter, preventOtpSpam, validateBody(signupSchema), asyncHandler(signup));
 router.post(

@@ -39,6 +39,10 @@ export const otpRequestSchema = z.object({
   email,
 });
 
+export const debugEmailOtpSendSchema = z.object({
+  email,
+});
+
 export const otpVerifySchema = z.object({
   email,
   otp: z.string().trim().regex(/^\d{6}$/, 'OTP must be 6 digits'),

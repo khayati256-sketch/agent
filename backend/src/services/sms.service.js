@@ -2,7 +2,7 @@ import { env } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
 
 const canSendSms = Boolean(env.fast2SmsApiKey);
-const forceMockSms = env.devOtpMode;
+const forceMockSms = env.devOtpMode && !canSendSms;
 
 const normalizePhone = (phone) => phone.replace(/[^\d+]/g, '');
 

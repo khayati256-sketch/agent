@@ -11,7 +11,7 @@ const STAGES = Object.freeze({
   EMAIL: 'email',
 });
 
-const OTP_LENGTH = 4;
+const OTP_LENGTH = 6;
 
 function SignupPage() {
   const { signup, verifySignupPhoneOtp, verifySignupEmailOtp, resendSignupOtp } = useAuth();
@@ -43,8 +43,8 @@ function SignupPage() {
   const stageLabel = stage === STAGES.PHONE ? 'Phone Verification' : 'Email Verification';
   const stageDescription =
     stage === STAGES.PHONE
-      ? 'Enter the 4-digit OTP sent to your mobile number.'
-      : 'Phone verified. Enter the 4-digit OTP sent to your email.';
+      ? 'Enter the 6-digit OTP sent to your mobile number.'
+      : 'Phone verified. Enter the 6-digit OTP sent to your email.';
 
   const attemptsRemaining = otpMeta?.attemptsRemaining ?? 0;
 
@@ -93,7 +93,7 @@ function SignupPage() {
       setEmailOtp('');
       lastAttemptRef.current = { phone: '', email: '' };
       setStage(STAGES.PHONE);
-      setInfo(response.message ?? 'Phone OTP sent automatically. Enter all 4 digits to verify.');
+      setInfo(response.message ?? 'Phone OTP sent automatically. Enter all 6 digits to verify.');
     } catch (authError) {
       setError(authError.message);
     } finally {

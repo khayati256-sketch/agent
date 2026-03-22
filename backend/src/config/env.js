@@ -52,6 +52,23 @@ const parseBooleanEnv = (rawValue, fallback) => {
   return rawValue.toLowerCase() === 'true';
 };
 
+const parseStringEnv = (rawValue, fallback = '') => {
+  if (typeof rawValue !== 'string') {
+    return fallback;
+  }
+
+  const normalized = rawValue.trim();
+  return normalized || fallback;
+};
+
+const parsePasswordEnv = (rawValue) => {
+  if (typeof rawValue !== 'string') {
+    return '';
+  }
+
+  return rawValue.replace(/\s+/g, '');
+};
+
 const resolvedNodeEnv = process.env.NODE_ENV ?? 'development';
 const defaultDevOtpMode = resolvedNodeEnv !== 'production';
 
@@ -75,12 +92,12 @@ export const env = {
   openaiBaseUrl: process.env.OPENAI_BASE_URL ?? '',
   openaiModel: process.env.OPENAI_MODEL ?? 'gpt-4.1-mini',
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? '',
-  smtpHost: process.env.SMTP_HOST ?? '',
+  smtpHost: parseStringEnv(process.env.SMTP_HOST, ''),
   smtpPort: Number(process.env.SMTP_PORT ?? 587),
   smtpSecure: process.env.SMTP_SECURE === 'true',
-  smtpUser: process.env.SMTP_USER ?? '',
-  smtpPass: process.env.SMTP_PASS ?? '',
-  mailFrom: process.env.MAIL_FROM ?? 'no-reply@ai-agent.local',
+  smtpUser: parseStringEnv(process.env.SMTP_USER, ''),
+  smtpPass: parsePasswordEnv(process.env.SMTP_PASS),
+  mailFrom: parseStringEnv(process.env.MAIL_FROM, parseStringEnv(process.env.SMTP_USER, 'no-reply@ai-agent.local')),
   fast2SmsApiKey: process.env.FAST2SMS_API_KEY ?? '',
   fast2SmsSenderId: process.env.FAST2SMS_SENDER_ID ?? '',
   fast2SmsRoute: process.env.FAST2SMS_ROUTE ?? 'q',
