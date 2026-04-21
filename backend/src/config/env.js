@@ -66,7 +66,14 @@ const parsePasswordEnv = (rawValue) => {
     return '';
   }
 
-  return rawValue.replace(/\s+/g, '');
+  const trimmed = rawValue.trim();
+  const unquoted =
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+      ? trimmed.slice(1, -1)
+      : trimmed;
+
+  return unquoted.replace(/\s+/g, '');
 };
 
 const resolvedNodeEnv = process.env.NODE_ENV ?? 'development';

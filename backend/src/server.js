@@ -10,8 +10,20 @@ const bootstrap = async () => {
   await emailService.verifyConnection();
   startSignupCleanupJob();
 
-  app.listen(env.port, () => {
+  const server = app.listen(env.port, () => {
     console.log(`Backend server running on http://localhost:${env.port}`);
+  });
+
+  server.on('error', (error) => {
+    if (error?.code === 'EADDRINUSE') {
+      console.error(
+        `Port ${env.port} is already in use. Stop the existing process or set a different PORT in backend/.env.`,
+      );
+      process.exit(1);
+    }
+
+    console.error('Server failed to listen:', error);
+    process.exit(1);
   });
 };
 

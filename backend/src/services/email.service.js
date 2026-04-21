@@ -6,6 +6,7 @@ const canSendEmail = Boolean(env.smtpHost && env.smtpUser && env.smtpPass);
 const forceMockEmail = env.devOtpMode && !canSendEmail;
 const isGmailSmtp = /^smtp\.gmail\.com$/i.test(env.smtpHost);
 const EMAIL_TIMEOUT_MS = 20 * 1000;
+let runtimeSmtpUnavailable = false;
 
 const transporter = canSendEmail
   ? nodemailer.createTransport({
@@ -49,13 +50,15 @@ const getMissingSmtpKeys = () =>
 
 const getDebugStatus = () => ({
   smtpConfigured: canSendEmail,
-  usingMockMode: forceMockEmail || !transporter,
+  usingMockMode: forceMockEmail || !transporter || (env.devOtpMode && runtimeSmtpUnavailable),
   host: env.smtpHost || '<missing>',
   port: env.smtpPort,
   secure: env.smtpSecure,
   user: maskValue(env.smtpUser),
   passConfigured: Boolean(env.smtpPass),
+  passLength: env.smtpPass.length,
   passLooksLikeGmailAppPassword: isGmailSmtp ? env.smtpPass.length === 16 : undefined,
+  smtpRuntimeUnavailable: runtimeSmtpUnavailable,
   mailFrom: env.mailFrom,
   devOtpMode: env.devOtpMode,
   nodeEnv: env.nodeEnv,
@@ -107,6 +110,7 @@ const verifyTransporter = async () => {
       })
       .catch((error) => {
         transportVerifyPromise = null;
+        runtimeSmtpUnavailable = true;
         console.error('[Email Service] SMTP transporter verification failed:', {
           code: error?.code,
           message: error?.message,
@@ -120,7 +124,7 @@ const verifyTransporter = async () => {
 };
 
 const sendMailOrLog = async ({ to, subject, html }) => {
-  if (forceMockEmail || !transporter) {
+  if (forceMockEmail || !transporter || (env.devOtpMode && runtimeSmtpUnavailable)) {
     console.log(`[Email Mock] To: ${to}`);
     console.log(`[Email Mock] Subject: ${subject}`);
     console.log(`[Email Mock] Body: ${html}`);
@@ -142,6 +146,7 @@ const sendMailOrLog = async ({ to, subject, html }) => {
       response: info?.response,
     });
   } catch (error) {
+    runtimeSmtpUnavailable = true;
     console.error('[Email Service] Email delivery failed:', {
       to,
       subject,
@@ -151,9 +156,19 @@ const sendMailOrLog = async ({ to, subject, html }) => {
       message: error?.message,
     });
 
+    if (env.devOtpMode) {
+      console.warn(
+        '[Email Service] DEV_OTP_MODE is enabled. Falling back to mock email delivery so auth flow can continue.',
+      );
+      console.log(`[Email Mock] To: ${to}`);
+      console.log(`[Email Mock] Subject: ${subject}`);
+      console.log(`[Email Mock] Body: ${html}`);
+      return;
+    }
+
     if (isGmailSmtp && (error?.code === 'EAUTH' || /invalid login/i.test(error?.message ?? ''))) {
       throw new AppError(
-        'SMTP authentication failed. For Gmail, enable 2-Step Verification and use a 16-character App Password in SMTP_PASS.',
+        'SMTP authentication failed. For Gmail, enable 2-Step Verification, set SMTP_USER to the same Gmail account that generated the app password, and use a 16-character App Password in SMTP_PASS.',
         502,
       );
     }
